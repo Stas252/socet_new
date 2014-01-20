@@ -1,0 +1,3 @@
+2
+www.vedomosti.ru/newsline/out/rss.xml 120
+www.anekdot.ru/rss/export_j.xml 90
