@@ -21,14 +21,14 @@ char* mwrite(char *mem,char *block,int len){
 	}
 	return &mem[len];
 }
-
+// Функция для загрузки страницы с адресом 
 int loadxml(char *adr,char *page,char *memory){
     WSADATA wsaData;
 	SOCKET Socket;
 	struct hostent *host;
 
     WSAStartup(MAKEWORD(2,2), &wsaData);
-    Socket=socket(AF_INET,SOCK_STREAM,0); //�������� (int) , ��� ������ (int) , 0 (����� �� ���������)
+    Socket=socket(AF_INET,SOCK_STREAM,0); //�������� (int) , ��� ������ (int) , 0 (����� �� ���������)
     host = gethostbyname(adr);
 	printf("%s \n",host->h_name);
 
@@ -56,6 +56,8 @@ int loadxml(char *adr,char *page,char *memory){
 	bool end = 0;
 	int i = 0;
 
+	
+	//Вывод заголовка
 	while(((nDataLength = recv(Socket,&cbuf, sizeof(cbuf),0)) > 0) && (end != 1)){
 		printf("%c",cbuf);
 		if( (prevc == 13) && (cbuf == 10) && (prc == 10) )
@@ -63,7 +65,7 @@ int loadxml(char *adr,char *page,char *memory){
 		prc = prevc;
 		prevc = cbuf;
 	}
-
+	//Запись в память 
 	newMem=mwrite(memory,&cbuf,sizeof(cbuf));
 	while((nDataLength = recv(Socket,buffer, sizeof(buffer),0)) > 0){
 		//fwrite(&buffer,1,nDataLength,f);
@@ -75,11 +77,11 @@ int loadxml(char *adr,char *page,char *memory){
 	WSACleanup();
 	return 0;
 }
-
+// Функция для перекодирования из кодировки УТФ8 в АСКИ
 void utfToAsci(char *utf,char *asci){
 	bool done = 0,stOut = 0;
 	int lon,i,k,numUt,numAs;
-	long code,codeShift = 0x430-'�';
+	long code,codeShift = 0x430-'�';
 	char buf;
 	char enc[] = {"encoding=\"windows-1251\""};
 	char *s;
@@ -152,6 +154,7 @@ struct block{
 	char desc[300];
 };
 
+// Функция для поиска новостей , состоит из заголовка ссылки и описания 
 void parce(char *mem,block *b){
 	int i,j,k;
 	char title[] = {"<title>"};
@@ -209,6 +212,7 @@ struct adr{
 	char page[120];
 	int time;
 };
+// Функция для отделения адресса на состовляющие 
 void getAdr(char *st,int t,adr *a){
 	int i,j;
 	i=0;
@@ -244,7 +248,7 @@ int readinfo(char *name,adr *a){
 	fclose(f);
 	return kol;
 }
-
+//Основная функция 
 int main (){
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
@@ -260,15 +264,17 @@ int main (){
 	a = (adr*)malloc(sizeof(adr)*10);
 
 	kol = readinfo("sites.txt",a);
+	//Бесконечный цикл
 	while(1){
+		//Цикл повторяется столько раз сколько сайтов с новостями 
 		for(i=0;i<kol;i++){
-			if((time(NULL) - lastCall >= a[i].time)){
+			if((time(NULL) - lastCall >= a[i].time)){//обновление информации 
 				ShowWindow(hwnd,SW_MAXIMIZE);
 				lastCall = time(NULL);
-				loadxml(a[i].ad,a[i].page,memory);
+				loadxml(a[i].ad,a[i].page,memory);//Чтение страницы
 				system("cls");
-				utfToAsci(memory,memoryAsci);
-				parce(memoryAsci,news);
+				utfToAsci(memory,memoryAsci);//Перевод 
+				parce(memoryAsci,news);//Выделние новостей 
 				for(i=0;i<KOL_BLOCK;i++){
 					printf("title:%s\n\n",news[i].title);
 					printf("desc:%s\n\n",news[i].desc);
